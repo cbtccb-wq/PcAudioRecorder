@@ -21,6 +21,22 @@ dotnet build
 dotnet run
 ```
 
+## 配布用 .exe の作成（ダブルクリック起動）
+
+```bash
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
+```
+
+生成された `publish\PcAudioRecorder.exe` をダブルクリックすれば .NET インストール不要で起動できます。
+
+### デスクトップショートカットの作成
+
+```powershell
+powershell -ExecutionPolicy Bypass -File create_shortcut.ps1
+```
+
+デスクトップに「PC Audio Recorder」ショートカットが作成されます。
+
 ## 技術構成
 - C# + WPF (.NET 8)
 - [NAudio](https://github.com/naudio/NAudio) 2.2.1
