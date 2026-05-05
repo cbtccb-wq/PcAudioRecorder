@@ -102,6 +102,7 @@ namespace PcAudioRecorder
             {
                 if (e.Exception != null)
                 {
+                    State = RecordingState.Idle;
                     ErrorOccurred?.Invoke(e.Exception);
                     Cleanup();
                     return;
@@ -124,6 +125,7 @@ namespace PcAudioRecorder
             }
             catch (Exception ex)
             {
+                State = RecordingState.Idle;
                 ErrorOccurred?.Invoke(ex);
             }
             finally
