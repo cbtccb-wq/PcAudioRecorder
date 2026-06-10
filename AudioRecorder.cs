@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using System.Threading;
-using NAudio.Wave;
+using NAudio.CoreAudioApi;
 using NAudio.Lame;
+using NAudio.Wave;
 
 namespace PcAudioRecorder
 {
@@ -17,40 +17,41 @@ namespace PcAudioRecorder
     {
         private WasapiLoopbackCapture? _capture;
         private WaveFileWriter? _waveWriter;
-        private MemoryStream? _memoryStream;
+        private LameMP3FileWriter? _mp3Writer;
+        private MMDevice? _activeRenderDevice;
         private string? _outputFilePath;
         private string _format = "WAV";
-        private int _mp3Bitrate = 192;
 
         public RecordingState State { get; private set; } = RecordingState.Idle;
 
-        // イベント
         public event Action<float>? VolumeChanged;
         public event Action<string>? StatusChanged;
         public event Action? RecordingStopped;
         public event Action<Exception>? ErrorOccurred;
 
-        public void Start(string outputFilePath, string format, int mp3Bitrate = 192)
+        public void Start(RecordingOptions options)
         {
             if (State != RecordingState.Idle)
                 throw new InvalidOperationException("すでに録音中です。");
 
-            _outputFilePath = outputFilePath;
-            _format = format;
-            _mp3Bitrate = mp3Bitrate;
+            _outputFilePath = options.OutputFilePath;
+            _format = options.OutputFormat;
 
             try
             {
-                _capture = new WasapiLoopbackCapture();
+                _activeRenderDevice = AudioDeviceService.GetRenderDeviceOrDefault(options.RenderDeviceId, AppLogger.Shared);
+                _capture = _activeRenderDevice == null
+                    ? new WasapiLoopbackCapture()
+                    : new WasapiLoopbackCapture(_activeRenderDevice);
 
-                if (format == "WAV")
+                if (_format == "WAV")
                 {
-                    _waveWriter = new WaveFileWriter(outputFilePath, _capture.WaveFormat);
+                    _waveWriter = new WaveFileWriter(options.OutputFilePath, _capture.WaveFormat);
                     _capture.DataAvailable += OnDataAvailableWav;
                 }
-                else // MP3
+                else
                 {
-                    _memoryStream = new MemoryStream();
+                    _mp3Writer = new LameMP3FileWriter(options.OutputFilePath, _capture.WaveFormat, options.Mp3Bitrate);
                     _capture.DataAvailable += OnDataAvailableMp3;
                 }
 
@@ -79,21 +80,20 @@ namespace PcAudioRecorder
 
         private void OnDataAvailableWav(object? sender, WaveInEventArgs e)
         {
-            if (_waveWriter == null) return;
-            _waveWriter.Write(e.Buffer, 0, e.BytesRecorded);
+            if (_waveWriter == null || _capture == null)
+                return;
 
-            // 音量計算（RMS）
-            float rms = CalculateRms(e.Buffer, e.BytesRecorded, _capture!.WaveFormat.BitsPerSample);
-            VolumeChanged?.Invoke(rms);
+            _waveWriter.Write(e.Buffer, 0, e.BytesRecorded);
+            VolumeChanged?.Invoke(CalculateRms(e.Buffer, e.BytesRecorded, _capture.WaveFormat.BitsPerSample));
         }
 
         private void OnDataAvailableMp3(object? sender, WaveInEventArgs e)
         {
-            if (_memoryStream == null) return;
-            _memoryStream.Write(e.Buffer, 0, e.BytesRecorded);
+            if (_mp3Writer == null || _capture == null)
+                return;
 
-            float rms = CalculateRms(e.Buffer, e.BytesRecorded, _capture!.WaveFormat.BitsPerSample);
-            VolumeChanged?.Invoke(rms);
+            _mp3Writer.Write(e.Buffer, 0, e.BytesRecorded);
+            VolumeChanged?.Invoke(CalculateRms(e.Buffer, e.BytesRecorded, _capture.WaveFormat.BitsPerSample));
         }
 
         private void OnCaptureStopped(object? sender, StoppedEventArgs e)
@@ -104,20 +104,10 @@ namespace PcAudioRecorder
                 {
                     State = RecordingState.Idle;
                     ErrorOccurred?.Invoke(e.Exception);
-                    Cleanup();
                     return;
                 }
 
-                if (_format == "WAV")
-                {
-                    _waveWriter?.Flush();
-                    _waveWriter?.Dispose();
-                    _waveWriter = null;
-                }
-                else // MP3
-                {
-                    SaveMp3();
-                }
+                FlushAndDisposeWriters();
 
                 State = RecordingState.Idle;
                 StatusChanged?.Invoke("保存完了: " + Path.GetFileName(_outputFilePath));
@@ -134,60 +124,64 @@ namespace PcAudioRecorder
             }
         }
 
-        private void SaveMp3()
+        private void FlushAndDisposeWriters()
         {
-            if (_memoryStream == null || _capture == null || _outputFilePath == null) return;
+            _waveWriter?.Flush();
+            _waveWriter?.Dispose();
+            _waveWriter = null;
 
-            _memoryStream.Position = 0;
-            using var rawReader = new RawSourceWaveStream(_memoryStream, _capture.WaveFormat);
-            using var mp3Writer = new LameMP3FileWriter(
-                _outputFilePath,
-                _capture.WaveFormat,
-                _mp3Bitrate);
-
-            var buffer = new byte[4096];
-            int read;
-            while ((read = rawReader.Read(buffer, 0, buffer.Length)) > 0)
-                mp3Writer.Write(buffer, 0, read);
+            _mp3Writer?.Flush();
+            _mp3Writer?.Dispose();
+            _mp3Writer = null;
         }
 
-        private float CalculateRms(byte[] buffer, int bytesRecorded, int bitsPerSample)
+        private static float CalculateRms(byte[] buffer, int bytesRecorded, int bitsPerSample)
         {
             if (bitsPerSample == 32)
             {
-                // 32bit float
                 double sum = 0;
-                int sampleCount = bytesRecorded / 4;
-                for (int i = 0; i < bytesRecorded; i += 4)
+                var sampleCount = bytesRecorded / 4;
+                for (var i = 0; i + 3 < bytesRecorded; i += 4)
                 {
-                    float sample = BitConverter.ToSingle(buffer, i);
+                    var sample = BitConverter.ToSingle(buffer, i);
                     sum += sample * sample;
                 }
+
                 return sampleCount > 0 ? (float)Math.Sqrt(sum / sampleCount) : 0f;
             }
-            else
+
+            if (bitsPerSample == 16)
             {
-                // 16bit PCM
                 double sum = 0;
-                int sampleCount = bytesRecorded / 2;
-                for (int i = 0; i < bytesRecorded; i += 2)
+                var sampleCount = bytesRecorded / 2;
+                for (var i = 0; i + 1 < bytesRecorded; i += 2)
                 {
-                    short sample = BitConverter.ToInt16(buffer, i);
-                    double normalized = sample / 32768.0;
+                    var sample = BitConverter.ToInt16(buffer, i);
+                    var normalized = sample / 32768.0;
                     sum += normalized * normalized;
                 }
+
                 return sampleCount > 0 ? (float)Math.Sqrt(sum / sampleCount) : 0f;
             }
+
+            return 0f;
         }
 
         private void Cleanup()
         {
-            _waveWriter?.Dispose();
-            _waveWriter = null;
-            _memoryStream?.Dispose();
-            _memoryStream = null;
-            _capture?.Dispose();
-            _capture = null;
+            FlushAndDisposeWriters();
+
+            if (_capture != null)
+            {
+                _capture.DataAvailable -= OnDataAvailableWav;
+                _capture.DataAvailable -= OnDataAvailableMp3;
+                _capture.RecordingStopped -= OnCaptureStopped;
+                _capture.Dispose();
+                _capture = null;
+            }
+
+            _activeRenderDevice?.Dispose();
+            _activeRenderDevice = null;
         }
 
         public void Dispose()

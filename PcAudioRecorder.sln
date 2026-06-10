@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PcAudioRecorder", "PcAudioRecorder.csproj", "{A2271E74-2DA8-4CA6-8706-3984B9EE4DCA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D9E054A9-EE87-428D-9B9F-D23872481CDE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PcAudioRecorder.Tests", "tests\PcAudioRecorder.Tests\PcAudioRecorder.Tests.csproj", "{A6327596-92BE-4F56-A211-CE5C96591C51}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2271E74-2DA8-4CA6-8706-3984B9EE4DCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2271E74-2DA8-4CA6-8706-3984B9EE4DCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2271E74-2DA8-4CA6-8706-3984B9EE4DCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2271E74-2DA8-4CA6-8706-3984B9EE4DCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6327596-92BE-4F56-A211-CE5C96591C51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6327596-92BE-4F56-A211-CE5C96591C51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6327596-92BE-4F56-A211-CE5C96591C51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6327596-92BE-4F56-A211-CE5C96591C51}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A6327596-92BE-4F56-A211-CE5C96591C51} = {D9E054A9-EE87-428D-9B9F-D23872481CDE}
+	EndGlobalSection
+EndGlobal
