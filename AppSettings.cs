@@ -10,6 +10,7 @@ namespace PcAudioRecorder
         public string OutputFormat { get; set; } = "WAV";
         public int Mp3Bitrate { get; set; } = 192;
         public string? SelectedRenderDeviceId { get; set; }
+        public bool AlwaysOnTop { get; set; }
 
         public static string DefaultSettingsPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

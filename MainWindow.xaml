@@ -121,6 +121,40 @@
             <Setter Property="Margin" Value="0,0,8,0"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
+
+        <Style x:Key="TopmostToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="#16213E"/>
+            <Setter Property="Foreground" Value="#A0C4FF"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#0F3460"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#0F3460"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#E94560"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#E94560"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="20">
@@ -136,11 +170,20 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,18">
-            <Ellipse Width="12" Height="12" Fill="#E94560" Margin="0,0,8,0" VerticalAlignment="Center"/>
-            <TextBlock Text="PC Audio Recorder" FontSize="22" FontWeight="Bold"
-                       Foreground="White" FontFamily="Segoe UI"/>
-        </StackPanel>
+        <DockPanel Grid.Row="0" Margin="0,0,0,18">
+            <ToggleButton x:Name="TopmostToggle" DockPanel.Dock="Right"
+                          Style="{StaticResource TopmostToggleStyle}"
+                          Content="📌 最前面"
+                          VerticalAlignment="Center"
+                          ToolTip="ウィンドウを常に最前面に表示します"
+                          Checked="TopmostToggle_Changed"
+                          Unchecked="TopmostToggle_Changed"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Ellipse Width="12" Height="12" Fill="#E94560" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <TextBlock Text="PC Audio Recorder" FontSize="22" FontWeight="Bold"
+                           Foreground="White" FontFamily="Segoe UI"/>
+            </StackPanel>
+        </DockPanel>
 
         <Border Grid.Row="1" Background="#16213E" CornerRadius="10" Padding="15,10" Margin="0,0,0,14">
             <StackPanel>

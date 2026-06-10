@@ -47,7 +47,23 @@ namespace PcAudioRecorder
                 _ => 0
             };
 
+            TopmostToggle.IsChecked = _settings.AlwaysOnTop;
+            Topmost = _settings.AlwaysOnTop;
+
             _isInitializing = false;
+        }
+
+        private void TopmostToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            var isOn = TopmostToggle.IsChecked == true;
+            Topmost = isOn;
+
+            if (_isInitializing)
+                return;
+
+            _settings.AlwaysOnTop = isOn;
+            _settings.Save();
+            _logger.Info(isOn ? "常に最前面表示を有効にしました。" : "常に最前面表示を無効にしました。");
         }
 
         private void LoadDeviceList()

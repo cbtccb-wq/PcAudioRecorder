@@ -15,6 +15,7 @@ PCで再生中の音声を録音し、WAV または MP3 形式で保存できる
 
 - 録音開始 / 停止
 - 録音対象の再生デバイス選択
+- 常に最前面表示の切り替え（ON/OFF・設定を記憶）
 - 保存形式選択: WAV / MP3
 - MP3 bitrate 選択: 128 / 192 / 320kbps
 - 保存先指定
@@ -45,6 +46,7 @@ PCで再生中の音声を録音し、WAV または MP3 形式で保存できる
 - `OutputFormat`
 - `Mp3Bitrate`
 - `SelectedRenderDeviceId`
+- `AlwaysOnTop`
 
 古い設定ファイルに未使用項目が残っていても読み込みに失敗しない。
 
